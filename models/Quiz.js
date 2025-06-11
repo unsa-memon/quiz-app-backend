@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const QuizSchema = new mongoose.Schema({
+const QuizSchema = new mongoose.Schema({ 
   title: {
     type: String,
     required: [true, 'Please provide a quiz title'],
