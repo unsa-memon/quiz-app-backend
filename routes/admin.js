@@ -3,7 +3,7 @@ const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
 const {
   getAllUsers,
-  deleteUser,
+  deleteUser, 
   deleteQuiz,
   getStats
 } = require('../controllers/adminController');
