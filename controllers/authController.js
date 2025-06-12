@@ -2,7 +2,7 @@ const User = require('../models/User');
 const crypto = require('crypto');
 const sendEmail = require('../utils/sendEmail');
 const { validationResult } = require('express-validator');
-
+ 
 // @desc    Register a user
 // @route   POST /api/auth/signup
 // @access  Public
