@@ -3,7 +3,7 @@ const QuizAttempt = require('../models/QuizAttempt');
 
 // @desc    Get user profile
 // @route   GET /api/users/profile
-// @access  Private
+// @access  Private 
 exports.getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
