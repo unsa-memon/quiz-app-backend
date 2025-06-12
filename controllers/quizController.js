@@ -297,7 +297,7 @@ exports.submitQuizAttempt = async (req, res) => {
         console.log(`- Selected Answer:`, response.selectedAnswer);
         console.log(`- Type of selectedAnswer:`, typeof response.selectedAnswer);
       });
-      console.log('==============================\n');
+      console.log('==============================\n'); 
     }
 
     // Basic validation
