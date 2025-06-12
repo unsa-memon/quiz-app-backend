@@ -2,7 +2,7 @@ const User = require('../models/User');
 const Quiz = require('../models/Quiz');
 const QuizAttempt = require('../models/QuizAttempt');
 
-// @desc    Get all users with their quizzes and attempts
+// @desc    Get all users with their quizzes and attempts 
 // @route   GET /api/admin/users
 // @access  Private/Admin
 exports.getAllUsers = async (req, res, next) => {
