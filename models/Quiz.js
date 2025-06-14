@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const QuizSchema = new mongoose.Schema({ 
+const QuizSchema = new mongoose.Schema({
   title: {
     type: String,
     required: [true, 'Please provide a quiz title'],
@@ -144,11 +144,17 @@ QuizSchema.pre('save', function(next) {
 
 // Virtual field for total marks
 QuizSchema.virtual('totalMarks').get(function() {
-  return this.questions.reduce((total, question) => total + question.marks, 0);
+  if (!this.questions || !Array.isArray(this.questions)) {
+    return 0;
+  }
+  return this.questions.reduce((total, question) => total + (question.marks || 1), 0);
 });
 
 // Virtual field for quiz length (number of questions)
 QuizSchema.virtual('questionCount').get(function() {
+  if (!this.questions || !Array.isArray(this.questions)) {
+    return 0;
+  }
   return this.questions.length;
 });
 
