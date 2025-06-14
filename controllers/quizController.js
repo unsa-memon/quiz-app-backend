@@ -297,7 +297,7 @@ exports.submitQuizAttempt = async (req, res) => {
         console.log(`- Selected Answer:`, response.selectedAnswer);
         console.log(`- Type of selectedAnswer:`, typeof response.selectedAnswer);
       });
-      console.log('==============================\n'); 
+      console.log('==============================\n');
     }
 
     // Basic validation
@@ -396,10 +396,11 @@ const processedResponses = responses.map((response, index) => {
 
     // Create attempt data
     const attemptData = {
-      quizId,
-      userId: req.user?.id || new mongoose.Types.ObjectId(), // Use a temporary ID if not logged in
+      quiz: quizId,  // Changed from quizId to quiz to match schema
+      user: req.user?.id || new mongoose.Types.ObjectId(),  // Changed from userId to user to match schema
       score,
       totalMarks: quiz.questions.reduce((sum, q) => sum + (q.marks || 1), 0),
+      totalQuestions: quiz.questions.length,  // Added missing required field
       responses: processedResponses,
       timeTaken: timeTaken || 0,
       completedAt: new Date()
@@ -483,7 +484,7 @@ exports.getQuizAttemptById = async (req, res) => {
     // Find the attempt and populate the quiz details
     const attempt = await QuizAttempt.findById(attemptId)
       .populate({
-        path: 'quizId',
+        path: 'quiz',
         select: 'title subject description questions',
         populate: {
           path: 'questions',
@@ -499,14 +500,39 @@ exports.getQuizAttemptById = async (req, res) => {
       });
     }
 
-    // Calculate percentage if not already calculated
-    if (!attempt.percentage) {
-      attempt.percentage = Math.round((attempt.score / attempt.totalMarks) * 100);
+    // Calculate total possible score by summing marks of all questions
+    const totalPossibleScore = attempt.quiz.questions.reduce(
+      (sum, question) => sum + (question.marks || 0), 0
+    );
+    
+    // Calculate percentage based on score and total possible score
+    let calculatedPercentage = 0;
+    if (totalPossibleScore > 0) {
+      calculatedPercentage = Math.round((attempt.score / totalPossibleScore) * 100);
+    }
+    
+    // Ensure the percentage is a valid number
+    calculatedPercentage = isNaN(calculatedPercentage) ? 0 : calculatedPercentage;
+    
+    // Update the attempt with the new percentage
+    attempt.percentage = calculatedPercentage;
+    
+    // Save the updated percentage to the database
+    try {
+      await QuizAttempt.findByIdAndUpdate(attempt._id, { 
+        $set: { 
+          percentage: calculatedPercentage,
+          totalMarks: totalPossibleScore // Ensure totalMarks is up to date
+        } 
+      });
+    } catch (updateError) {
+      console.error('Error updating attempt percentage:', updateError);
+      // Continue with the request even if update fails
     }
 
     // Map through responses and add question details
     const enhancedResponses = attempt.responses.map(response => {
-      const question = attempt.quizId.questions.find(
+      const question = attempt.quiz.questions.find(
         q => q._id.toString() === response.questionId.toString()
       );
       
@@ -523,16 +549,20 @@ exports.getQuizAttemptById = async (req, res) => {
     // Prepare the response data
     const responseData = {
       _id: attempt._id,
-      quizId: attempt.quizId._id,
-      quizTitle: attempt.quizId.title,
-      subject: attempt.quizId.subject,
+      quizId: attempt.quiz._id,
+      quizTitle: attempt.quiz.title,
+      subject: attempt.quiz.subject,
       score: attempt.score,
       totalMarks: attempt.totalMarks,
+      totalPossibleScore: totalPossibleScore, // Using the already calculated totalPossibleScore
       percentage: attempt.percentage,
       timeTaken: attempt.timeTaken,
       completedAt: attempt.completedAt,
       responses: enhancedResponses
     };
+    
+    // Log the response data for debugging
+    console.log('Sending response data:', JSON.stringify(responseData, null, 2));
 
     res.status(200).json({
       success: true,
